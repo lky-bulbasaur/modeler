@@ -70,6 +70,8 @@ void SampleModel::draw()
 	glPopMatrix();
 }
 
+// Comment all other main() and uncomment this if you want the modeler to load this
+/*
 int main()
 {
 	// Initialize the controls
@@ -85,3 +87,4 @@ int main()
     ModelerApplication::Instance()->Init(&createSampleModel, controls, NUMCONTROLS);
     return ModelerApplication::Instance()->Run();
 }
+*/
