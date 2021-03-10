@@ -225,7 +225,7 @@ void Camera::lookAt(Vec3f eye, Vec3f at, Vec3f up) {
 	// However, since OpenGL has a fixed camera and needs to transform the ENTIRE WORLD to achieve different viewplane,
 	// All modelview transformations are done INVERSELY
 	// This is why for the translation, we translate to -eye instead of eye
-	// Likewise, this is why we use the TRANSPOSE (inverse for orthogonal matrix in this case) of the rotational matrix
+	// Likewise, this is why we TRANSPOSE (inverse for orthogonal matrix in this case) the orignal rotation matrix before use
 	double matrix[16];
 		matrix[0]	= camLeft[0];
 		matrix[1]	= camUp[0];
