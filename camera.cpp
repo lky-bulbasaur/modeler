@@ -200,22 +200,32 @@ void Camera::applyViewingTransform() {
 }
 
 void Camera::lookAt(Vec3f eye, Vec3f at, Vec3f up) {
+	// camForward vector specifies "where the x-axis of the camera should point at"
 	Vec3f camForward = eye - at;
 	camForward.normalize();
 
+	// camLeft vector specifies "where the z-axis of the camera should point at"
 	Vec3f camLeft = up ^ camForward;
 	camLeft.normalize();
 
+	// camUp vector specifies "where the y-axis of the camera should point at"
 	Vec3f camUp = camForward ^ camLeft;
 	camUp.normalize();
 
 
-	// Define the model view matrix (from http://songho.ca/opengl/gl_camera.html)
+	// Define the modelview matrix (from http://songho.ca/opengl/gl_camera.html)
+	// Which is the result of rotation matrix * translation matrix
 	// Indexed as follows:
 	//	0	4	8	12		This row handles rotation and translation along X-axis
 	//	1	5	9	13		This row handles rotation and translation along Y-axis
 	//	2	6	10	14		This row handles rotation and translation along Z-axis
 	//	3	7	11	15		This row exists only for the sake of homogeneous coordinates
+
+	// Note: For normal rotation, the 1st, 2nd and 3rd COLUMNS should be responsible for X-, Y- or Z-axes rotation
+	// However, since OpenGL has a fixed camera and needs to transform the ENTIRE WORLD to achieve different viewplane,
+	// All modelview transformations are done INVERSELY
+	// This is why for the translation, we translate to -eye instead of eye
+	// Likewise, this is why we use the TRANSPOSE (inverse for orthogonal matrix in this case) of the rotational matrix
 	double matrix[16];
 		matrix[0]	= camLeft[0];
 		matrix[1]	= camUp[0];
