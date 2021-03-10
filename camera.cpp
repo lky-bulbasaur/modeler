@@ -3,6 +3,8 @@
 #include <gl/glu.h>
 
 #include "camera.h"
+#include "vec.h"
+
 
 #pragma warning(push)
 #pragma warning(disable : 4244)
@@ -176,11 +178,74 @@ void Camera::applyViewingTransform() {
 	if( mDirtyTransform )
 		calculateViewingTransformParameters();
 
+	
 	// Place the camera at mPosition, aim the camera at
 	// mLookAt, and twist the camera such that mUpVector is up
-	gluLookAt(	mPosition[0], mPosition[1], mPosition[2],
-				mLookAt[0],   mLookAt[1],   mLookAt[2],
-				mUpVector[0], mUpVector[1], mUpVector[2]);
+	//gluLookAt(	mPosition[0], mPosition[1], mPosition[2],
+	//			mLookAt[0],   mLookAt[1],   mLookAt[2],
+	//			mUpVector[0], mUpVector[1], mUpVector[2]);
+
+	printf("Eye: (%f, %f, %f)\nReference: (%f, %f, %f)\nUp: (%f, %f, %f)\n\n", mPosition[0], mPosition[1], mPosition[2], mLookAt[0], mLookAt[1], mLookAt[2], mUpVector[0], mUpVector[1], mUpVector[2]);
+	//double theta = atan2(mPosition[0] - mLookAt[0], mPosition[2] - mLookAt[2]) / (2 * M_PI) * 360;
+	//if (theta < 0) theta = 360 + theta;
+	//printf("Y-axis angle = %f\n", theta);
+
+	//double theta = atan2(mPosition[1] - mLookAt[1], mPosition[2] - mLookAt[2]) / (2 * M_PI) * 360;
+	//if (theta < 0) theta = 360 + theta;
+	//printf("X-axis angle = %f\n", theta);
+
+	lookAt(mPosition, mLookAt, mUpVector);	
+
+
+}
+
+void Camera::lookAt(Vec3f eye, Vec3f at, Vec3f up) {
+	// camForward vector specifies "where the x-axis of the camera should point at"
+	Vec3f camForward = eye - at;
+	camForward.normalize();
+
+	// camLeft vector specifies "where the z-axis of the camera should point at"
+	Vec3f camLeft = up ^ camForward;
+	camLeft.normalize();
+
+	// camUp vector specifies "where the y-axis of the camera should point at"
+	Vec3f camUp = camForward ^ camLeft;
+	camUp.normalize();
+
+
+	// Define the modelview matrix (from http://songho.ca/opengl/gl_camera.html)
+	// Which is the result of rotation matrix * translation matrix
+	// Indexed as follows:
+	//	0	4	8	12		This row handles rotation and translation along X-axis
+	//	1	5	9	13		This row handles rotation and translation along Y-axis
+	//	2	6	10	14		This row handles rotation and translation along Z-axis
+	//	3	7	11	15		This row exists only for the sake of homogeneous coordinates
+
+	// Note: For normal rotation, the 1st, 2nd and 3rd COLUMNS should be responsible for X-, Y- or Z-axes rotation
+	// However, since OpenGL has a fixed camera and needs to transform the ENTIRE WORLD to achieve different viewplane,
+	// All modelview transformations are done INVERSELY
+	// This is why for the translation, we translate to -eye instead of eye
+	// Likewise, this is why we TRANSPOSE (inverse for orthogonal matrix in this case) the orignal rotation matrix before use
+	double matrix[16];
+		matrix[0]	= camLeft[0];
+		matrix[1]	= camUp[0];
+		matrix[2]	= camForward[0];
+		matrix[3]	= 0;
+		matrix[4]	= camLeft[1];
+		matrix[5]	= camUp[1];
+		matrix[6]	= camForward[1];
+		matrix[7]	= 0;
+		matrix[8]	= camLeft[2];
+		matrix[9]	= camUp[2];
+		matrix[10]	= camForward[2];
+		matrix[11]	= 0;
+		matrix[12]	= - camLeft[0] * eye[0] - camLeft[1] * eye[1] - camLeft[2] * eye[2];
+		matrix[13]	= - camUp[0] * eye[0] - camUp[1] * eye[1] - camUp[2] * eye[2];
+		matrix[14]	= - camForward[0] * eye[0] - camForward[1] * eye[1] - camForward[2] * eye[2];
+		matrix[15]	= 1;
+
+	// Transform the current worldview according to the specified matrix
+	glMultMatrixd(matrix);
 }
 
 #pragma warning(pop)
