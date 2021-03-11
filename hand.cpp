@@ -19,7 +19,7 @@ public:
 	HandModel(int x, int y, int w, int h, char* label)
 		: ModelerView(x, y, w, h, label) {
 		verticesList = new vector<Vec3f>();
-		MARCHING_CUBES_THRESHOLD = 15;
+		MARCHING_CUBES_THRESHOLD = 17;
 		FLOOR_SIZE = 20.0;
 	}
 
@@ -167,7 +167,7 @@ void HandModel::updateMarchingCubesMap() {
 					double x = i * cubeSize - verticesList->at(n)[0] - offset;
 					double y = j * cubeSize - verticesList->at(n)[1];
 					double z = k * cubeSize - verticesList->at(n)[2] - offset;
-					surfaceLevel += (1 / (x * x + y * y + z * z));
+					surfaceLevel += 1 / (x * x + y * y + z * z);
 				}
 
 				if (surfaceLevel >= MARCHING_CUBES_THRESHOLD) {
@@ -421,6 +421,40 @@ void HandModel::draw()
 	//	PALM
 	// =====================================================================================================================
 	vector<Vec3f> palm;
+		palm.push_back(Vec3f(-2, 3, 0));
+		palm.push_back(Vec3f(-2, 4, 0));
+		palm.push_back(Vec3f(-1.5, 3, 0));
+		palm.push_back(Vec3f(-1.5, 4, 0));
+		palm.push_back(Vec3f(-1.25, 5.5, -0.25));
+		palm.push_back(Vec3f(-0.75, 2, -0.5));
+		palm.push_back(Vec3f(-0.75, 4, -0.25));
+		palm.push_back(Vec3f(-1, 2.5, 0));
+		palm.push_back(Vec3f(-1, 3, -0.25));
+		palm.push_back(Vec3f(-1, 4, -0.25));
+		palm.push_back(Vec3f(-0.5, 2, -0.5));
+		palm.push_back(Vec3f(-0.5, 3, -0.5));
+		palm.push_back(Vec3f(-0.5, 4, -0.25));
+		palm.push_back(Vec3f(-0.5, 5.5, -0.1));
+		palm.push_back(Vec3f(0, 1, -0.25));
+		palm.push_back(Vec3f(0, 2, -0.25));
+		palm.push_back(Vec3f(0, 3.5, -0.65));
+		palm.push_back(Vec3f(0.5, 1, -0.25));
+		palm.push_back(Vec3f(0.5, 2, -0.45));
+		palm.push_back(Vec3f(0.5, 3, -0.65));
+		palm.push_back(Vec3f(0.5, 4, -0.45));
+		palm.push_back(Vec3f(0.5, 5, -0.25));
+		palm.push_back(Vec3f(1, 1, -0.25));
+		palm.push_back(Vec3f(1, 2, -0.25));
+		palm.push_back(Vec3f(1, 3, -0.25));
+		palm.push_back(Vec3f(1, 4, -0.25));
+		palm.push_back(Vec3f(1, 5.5, -0.1));
+		palm.push_back(Vec3f(1.5, 2, -0.25));
+		palm.push_back(Vec3f(1.5, 3, -0.1));
+		palm.push_back(Vec3f(1.5, 4, -0.1));
+		palm.push_back(Vec3f(2, 5, -0.25));
+		palm.push_back(Vec3f(2, 3.5, -0.25));
+		palm.push_back(Vec3f(2, 4, 0));
+
 		// Also move children
 		for (int i = 0; i < thumbRoot.size(); ++i)	palm.push_back(thumbRoot.at(i));
 		for (int i = 0; i < indexRoot.size(); ++i)	palm.push_back(indexRoot.at(i));
@@ -437,14 +471,9 @@ void HandModel::draw()
 
 	// Draw metaballs
 	setAmbientColor(.1f, .1f, .1f);
-	setDiffuseColor(1, 1, 0);
+	setDiffuseColor(1, 0.6, 0);
 	glPushMatrix();
 	glTranslated(VAL(XPOS), VAL(YPOS), VAL(ZPOS));
-	glPushMatrix();
-		glTranslated(0, 3.5, 0);
-		glRotated(90, 0, 0, 1);
-		drawCylinder(0.5, 2.5, 2.5);
-	glPopMatrix();
 	for (int i = 0; i < GRID_NUM; i += steps) {
 		for (int j = 0; j < GRID_NUM; j += steps) {
 			for (int k = 0; k < GRID_NUM; k += steps) {
