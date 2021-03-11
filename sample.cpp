@@ -1,3 +1,4 @@
+/*
 // The sample model.  You should build a file
 // very similar to this for when you make your model.
 #include "modelerview.h"
@@ -70,6 +71,8 @@ void SampleModel::draw()
 	glPopMatrix();
 }
 
+// Comment all other main() and uncomment this if you want the modeler to load this
+
 int main()
 {
 	// Initialize the controls
@@ -85,3 +88,4 @@ int main()
     ModelerApplication::Instance()->Init(&createSampleModel, controls, NUMCONTROLS);
     return ModelerApplication::Instance()->Run();
 }
+*/

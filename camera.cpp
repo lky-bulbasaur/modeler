@@ -185,18 +185,7 @@ void Camera::applyViewingTransform() {
 	//			mLookAt[0],   mLookAt[1],   mLookAt[2],
 	//			mUpVector[0], mUpVector[1], mUpVector[2]);
 
-	printf("Eye: (%f, %f, %f)\nReference: (%f, %f, %f)\nUp: (%f, %f, %f)\n\n", mPosition[0], mPosition[1], mPosition[2], mLookAt[0], mLookAt[1], mLookAt[2], mUpVector[0], mUpVector[1], mUpVector[2]);
-	//double theta = atan2(mPosition[0] - mLookAt[0], mPosition[2] - mLookAt[2]) / (2 * M_PI) * 360;
-	//if (theta < 0) theta = 360 + theta;
-	//printf("Y-axis angle = %f\n", theta);
-
-	//double theta = atan2(mPosition[1] - mLookAt[1], mPosition[2] - mLookAt[2]) / (2 * M_PI) * 360;
-	//if (theta < 0) theta = 360 + theta;
-	//printf("X-axis angle = %f\n", theta);
-
 	lookAt(mPosition, mLookAt, mUpVector);	
-
-
 }
 
 void Camera::lookAt(Vec3f eye, Vec3f at, Vec3f up) {
