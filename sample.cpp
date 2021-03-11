@@ -1,3 +1,4 @@
+/*
 // The sample model.  You should build a file
 // very similar to this for when you make your model.
 #include "modelerview.h"
@@ -71,7 +72,7 @@ void SampleModel::draw()
 }
 
 // Comment all other main() and uncomment this if you want the modeler to load this
-/*
+
 int main()
 {
 	// Initialize the controls
