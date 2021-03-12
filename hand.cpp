@@ -5,12 +5,13 @@
 #include "modelerdraw.h"
 #include <FL/gl.h>
 #include <vector>
-#include <thread>
 
+#include "ThreadPool.h"
 #include "vec.h"
 #include "mat.h"
 #include "marchingcubesconst.h"
 #include "modelerglobals.h"
+
 
 // To make a HandModel, we inherit off of ModelerView
 class HandModel : public ModelerView
@@ -19,12 +20,14 @@ public:
 	HandModel(int x, int y, int w, int h, char* label)
 		: ModelerView(x, y, w, h, label) {
 		verticesList = new vector<Vec3f>();
+		marchingCubesMap = NULL;
 		MARCHING_CUBES_THRESHOLD = 17;
 		FLOOR_SIZE = 20.0;
 	}
 
 	~HandModel() {
 		delete verticesList;
+		if (marchingCubesMap != NULL) delete3DArray(gridNum + 1, marchingCubesMap);
 	}
 
 	virtual void draw();
@@ -39,13 +42,40 @@ public:
 
 	void updateMarchingCubesMap();
 
+	template <typename T>
+	void new3DArray(int size, T*** &list) {
+		list = new T** [size];
+		for (int i = 0; i < size; ++i) {
+			list[i] = new T* [size];
+			for (int j = 0; j < size; ++j) {
+				list[i][j] = new T[size];
+			}
+		}
+	}
+
+	template <typename T>
+	void delete3DArray(int size, T*** &list) {
+		for (int i = 0; i < size; ++i) {
+			for (int j = 0; j < size; ++j) {
+				delete [] list[i][j];
+			}
+			delete [] list[i];
+		}
+		delete [] list;
+	}
+
 private:
-	static const int GRID_NUM = 100;
+	static const int GRID_NUM_HIGH = 120;
+	static const int GRID_NUM_MEDIUM = 80;
+	static const int GRID_NUM_LOW = 64;
+	static const int GRID_NUM_POOR = 48;
+
+	int gridNum = GRID_NUM_MEDIUM;
 
 	double MARCHING_CUBES_THRESHOLD;
 	double FLOOR_SIZE;
 
-	bool marchingCubesMap[GRID_NUM + 1][GRID_NUM + 1][GRID_NUM + 1];
+	double*** marchingCubesMap;
 	vector<Vec3f>* verticesList;
 };
 
@@ -141,64 +171,59 @@ void HandModel::clearVerticesList() {
 void HandModel::updateMarchingCubesMap() {
 
 	// Select number of tests according to quality setting
-	int steps;
+	int oldGridNum = gridNum;
 	switch (ModelerDrawState::Instance()->m_quality) {
 	case HIGH:
-		steps = 1; break;
+		gridNum = GRID_NUM_HIGH; break;
 	case MEDIUM:
-		steps = 1; break;
+		gridNum = GRID_NUM_MEDIUM; break;
 	case LOW:
-		steps = 1; break;
+		gridNum = GRID_NUM_LOW; break;
 	case POOR:
-		steps = 1; break;
+		gridNum = GRID_NUM_POOR; break;
 	}
 
-	double cubeSize = 1.0 / GRID_NUM * FLOOR_SIZE * steps;
+	if (marchingCubesMap != NULL) delete3DArray(oldGridNum + 1, marchingCubesMap);
+	new3DArray(gridNum + 1, marchingCubesMap);
+
+	double cubeSize = 1.0 / gridNum * FLOOR_SIZE;
 	double halfCubeSize = cubeSize / 2.0;
 	double offset = FLOOR_SIZE / 2;
 
-	for (int i = 0; i < GRID_NUM + 1; i += steps) {
-		for (int j = 0; j < GRID_NUM + 1; j += steps) {
-			for (int k = 0; k < GRID_NUM + 1; k += steps) {
-				// Surface level is the summation of all 1/r^2, where r is the current point's distance from a vertex in the vertices list
-				double surfaceLevel = 0;
-
-				for (int n = 0; n < verticesList->size(); ++n) {
-					double x = i * cubeSize - verticesList->at(n)[0] - offset;
-					double y = j * cubeSize - verticesList->at(n)[1];
-					double z = k * cubeSize - verticesList->at(n)[2] - offset;
-					surfaceLevel += 1 / (x * x + y * y + z * z);
-				}
-
-				if (surfaceLevel >= MARCHING_CUBES_THRESHOLD) {
-					marchingCubesMap[i][j][k] = true;
-				}
-				else {
-					marchingCubesMap[i][j][k] = false;
-				}
+	for (int i = 0; i < gridNum + 1; ++i) {
+		for (int j = 0; j < gridNum + 1; ++j) {
+			for (int k = 0; k < gridNum + 1; ++k) {
+				marchingCubesMap[i][j][k] = 0;
 			}
 		}
 	}
+
+	ThreadPool* pool = new ThreadPool(8);
+
+	for (int n = 0; n < verticesList->size(); ++n) {
+		pool->enqueue([this, cubeSize, offset, n]() {
+			for (int i = 0; i < gridNum + 1; ++i) {
+				for (int j = 0; j < gridNum + 1; ++j) {
+					for (int k = 0; k < gridNum + 1; ++k) {
+						double x = i * cubeSize - verticesList->at(n)[0] - offset;
+						double y = j * cubeSize - verticesList->at(n)[1];
+						double z = k * cubeSize - verticesList->at(n)[2] - offset;
+						
+						marchingCubesMap[i][j][k] += 1 / (x * x + y * y + z * z);
+					}
+				}
+			}
+		});
+	}
+
+	delete pool;
 }
 
 // We are going to override (is that the right word?) the draw()
 // method of ModelerView to draw out HandModel
 void HandModel::draw()
 {
-	// Select number of tests according to quality setting
-	int steps;
-	switch (ModelerDrawState::Instance()->m_quality) {
-	case HIGH:
-		steps = 1; break;
-	case MEDIUM:
-		steps = 1; break;
-	case LOW:
-		steps = 1; break;
-	case POOR:
-		steps = 1; break;
-	}
-
-	double cubeSize = 1.0 / GRID_NUM * FLOOR_SIZE * steps;
+	double cubeSize = 1.0 / gridNum * FLOOR_SIZE;
 	double halfCubeSize = cubeSize / 2.0;
 	double offset = FLOOR_SIZE / 2;
 
@@ -474,23 +499,23 @@ void HandModel::draw()
 	setDiffuseColor(1, 0.6, 0);
 	glPushMatrix();
 	glTranslated(VAL(XPOS), VAL(YPOS), VAL(ZPOS));
-	for (int i = 0; i < GRID_NUM; i += steps) {
-		for (int j = 0; j < GRID_NUM; j += steps) {
-			for (int k = 0; k < GRID_NUM; k += steps) {
+	for (int i = 0; i < gridNum; ++i) {
+		for (int j = 0; j < gridNum; ++j) {
+			for (int k = 0; k < gridNum; ++k) {
 				int index = 0;	// 00000000, each bit representing the value of a corner of the current cube
 				double x = i * cubeSize - offset;
 				double y = j * cubeSize;
 				double z = k * cubeSize - offset;
 
 				// Perform bitwise-OR to manipulate the value of index, for fitting into EDGE_TABLE later
-				if (marchingCubesMap[i][j][k])				index |= 1;		// v0
-				if (marchingCubesMap[i + 1][j][k])			index |= 2;		// v1
-				if (marchingCubesMap[i + 1][j][k + 1])		index |= 4;		// v2
-				if (marchingCubesMap[i][j][k + 1])			index |= 8;		// v3
-				if (marchingCubesMap[i][j + 1][k])			index |= 16;	// v4
-				if (marchingCubesMap[i + 1][j + 1][k])		index |= 32;	// v5
-				if (marchingCubesMap[i + 1][j + 1][k + 1])	index |= 64;	// v6
-				if (marchingCubesMap[i][j + 1][k + 1])		index |= 128;	// v7	
+				if (marchingCubesMap[i][j][k] >= MARCHING_CUBES_THRESHOLD)				index |= 1;		// v0
+				if (marchingCubesMap[i + 1][j][k] >= MARCHING_CUBES_THRESHOLD)			index |= 2;		// v1
+				if (marchingCubesMap[i + 1][j][k + 1] >= MARCHING_CUBES_THRESHOLD)		index |= 4;		// v2
+				if (marchingCubesMap[i][j][k + 1] >= MARCHING_CUBES_THRESHOLD)			index |= 8;		// v3
+				if (marchingCubesMap[i][j + 1][k] >= MARCHING_CUBES_THRESHOLD)			index |= 16;	// v4
+				if (marchingCubesMap[i + 1][j + 1][k] >= MARCHING_CUBES_THRESHOLD)		index |= 32;	// v5
+				if (marchingCubesMap[i + 1][j + 1][k + 1] >= MARCHING_CUBES_THRESHOLD)	index |= 64;	// v6
+				if (marchingCubesMap[i][j + 1][k + 1] >= MARCHING_CUBES_THRESHOLD)		index |= 128;	// v7	
 
 				if (index == 0) continue;
 
