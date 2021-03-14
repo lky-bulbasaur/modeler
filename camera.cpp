@@ -17,7 +17,7 @@ const float kMouseRotationSensitivity		= 1.0f/90.0f;
 const float kMouseTranslationXSensitivity	= 0.03f;
 const float kMouseTranslationYSensitivity	= 0.03f;
 const float kMouseZoomSensitivity			= 0.08f;
-const float kMouseTwistSensitivity			= 0.03f;
+const float kMouseTwistSensitivity			= 0.01f;
 
 void MakeDiagonal(Mat4f &m, float k)
 {
