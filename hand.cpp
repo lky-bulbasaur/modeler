@@ -66,9 +66,9 @@ public:
 
 private:
 	static const int GRID_NUM_HIGH = 120;
-	static const int GRID_NUM_MEDIUM = 80;
+	static const int GRID_NUM_MEDIUM = 96;
 	static const int GRID_NUM_LOW = 64;
-	static const int GRID_NUM_POOR = 48;
+	static const int GRID_NUM_POOR = 8;
 
 	int gridNum = GRID_NUM_MEDIUM;
 
@@ -203,8 +203,8 @@ void HandModel::updateMarchingCubesMap() {
 	for (int n = 0; n < verticesList->size(); ++n) {
 		pool->enqueue([this, cubeSize, offset, n]() {
 			for (int i = 0; i < gridNum + 1; ++i) {
-				for (int j = 0; j < gridNum + 1; ++j) {
-					for (int k = 0; k < gridNum + 1; ++k) {
+				for (int j = 0; j < gridNum * 3 / 5 + 1; ++j) {
+					for (int k = gridNum * 2 / 5; k < gridNum + 1; ++k) {
 						double x = i * cubeSize - verticesList->at(n)[0] - offset;
 						double y = j * cubeSize - verticesList->at(n)[1];
 						double z = k * cubeSize - verticesList->at(n)[2] - offset;
@@ -446,6 +446,7 @@ void HandModel::draw()
 	//	PALM
 	// =====================================================================================================================
 	vector<Vec3f> palm;
+
 		palm.push_back(Vec3f(-2, 3, 0));
 		palm.push_back(Vec3f(-2, 4, 0));
 		palm.push_back(Vec3f(-1.5, 3, 0));
@@ -500,8 +501,8 @@ void HandModel::draw()
 	glPushMatrix();
 	glTranslated(VAL(XPOS), VAL(YPOS), VAL(ZPOS));
 	for (int i = 0; i < gridNum; ++i) {
-		for (int j = 0; j < gridNum; ++j) {
-			for (int k = 0; k < gridNum; ++k) {
+		for (int j = 0; j < gridNum * 3 / 5; ++j) {
+			for (int k = gridNum * 2 / 5; k < gridNum; ++k) {
 				int index = 0;	// 00000000, each bit representing the value of a corner of the current cube
 				double x = i * cubeSize - offset;
 				double y = j * cubeSize;
@@ -550,8 +551,7 @@ void HandModel::draw()
 						case 11:
 							vertices[m] = Vec3f(x, y + halfCubeSize, z + cubeSize); break;
 						default:
-							validTriangle = false;
-							break;
+							validTriangle = false; break;
 						}
 					}
 
