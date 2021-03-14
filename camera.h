@@ -17,7 +17,7 @@ protected:
     float		mElevation;
     float		mAzimuth;
     float		mDolly;
-    float		mTwist; // Not implemented yet
+    float		mTwist;
     
     Vec3f		mLookAt;
     

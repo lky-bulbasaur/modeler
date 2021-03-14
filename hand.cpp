@@ -12,6 +12,8 @@
 #include "marchingcubesconst.h"
 #include "modelerglobals.h"
 
+#include <iostream>
+
 // To make a HandModel, we inherit off of ModelerView
 class HandModel : public ModelerView
 {
@@ -76,6 +78,15 @@ private:
 
 	double*** marchingCubesMap;
 	vector<Vec3f>* verticesList;
+
+	float thumb_tipXrootX_angle = 0;			//max72
+	float thumb_tipXrootX_delta = 4;
+	float thumb_tipYrootY_angle = 0;			//max36
+	float thumb_tipYrootY_delta = 2;
+	float index_tipXmidXrootX_angle = 0;		//max63
+	float index_tipXmidXrootX_delta = 3.5;
+	float rest_tipXmidXrootX_angle = 0;			//max9
+	float rest_tipXmidXrootX_delta = 0.5;
 };
 
 // We need to make a creator function, mostly because of
@@ -231,6 +242,21 @@ void HandModel::draw()
 	// projection matrix, don't bother with this ...
 	ModelerView::draw();
 
+
+	if (ModelerApplication::Instance()->GetAnimateValue()) {
+		thumb_tipXrootX_angle += thumb_tipXrootX_delta;
+		thumb_tipYrootY_angle += thumb_tipYrootY_delta;
+		index_tipXmidXrootX_angle += index_tipXmidXrootX_delta;
+		rest_tipXmidXrootX_angle += rest_tipXmidXrootX_delta;
+		//std::cout << "hi" << endl;
+		if (thumb_tipYrootY_angle > 35 || thumb_tipYrootY_angle < 0) {
+			thumb_tipXrootX_delta *= -1;
+			thumb_tipYrootY_delta *= -1;
+			index_tipXmidXrootX_delta *= -1;
+			rest_tipXmidXrootX_delta *= -1;
+		}
+	}
+
 	// Dynamic lighting
 	GLfloat light0Pos[] = { VAL(LIGHT0_XPOS), VAL(LIGHT0_YPOS), VAL(LIGHT0_ZPOS), 0 };
 	glLightfv(GL_LIGHT0, GL_POSITION, light0Pos);
@@ -263,8 +289,8 @@ void HandModel::draw()
 			thumbTip.push_back(Vec3f(0, 1, 0));
 
 			// Move self only
-			rotateVertices(VAL(THUMB_TIP_XROTATE), 1, 0, 0, &thumbTip);
-			rotateVertices(VAL(THUMB_TIP_YROTATE), 0, 1, 0, &thumbTip);
+			rotateVertices(VAL(THUMB_TIP_XROTATE) + thumb_tipXrootX_angle, 1, 0, 0, &thumbTip);
+			rotateVertices(VAL(THUMB_TIP_YROTATE) + thumb_tipYrootY_angle, 0, 1, 0, &thumbTip);
 			rotateVertices(VAL(THUMB_TIP_ZROTATE), 0, 0, 1, &thumbTip);
 			translateVertices(0, 1.4, 0, &thumbTip);
 
@@ -277,8 +303,8 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < thumbTip.size(); ++i)	thumbRoot.push_back(thumbTip.at(i));
 			rotateVertices(45, 0, 0, 1, &thumbRoot);
-			rotateVertices(VAL(THUMB_ROOT_XROTATE), 1, 0, 0, &thumbRoot);
-			rotateVertices(VAL(THUMB_ROOT_YROTATE), 0, 1, 0, &thumbRoot);
+			rotateVertices(VAL(THUMB_ROOT_XROTATE) + thumb_tipXrootX_angle, 1, 0, 0, &thumbRoot);
+			rotateVertices(VAL(THUMB_ROOT_YROTATE) + thumb_tipYrootY_angle, 0, 1, 0, &thumbRoot);
 			rotateVertices(VAL(THUMB_ROOT_ZROTATE), 0, 0, 1, &thumbRoot);
 			translateVertices(-2.5, 4, 0, &thumbRoot);
 
@@ -292,7 +318,7 @@ void HandModel::draw()
 			indexTip.push_back(Vec3f(0, 1, 0));
 
 			// Move self only
-			rotateVertices(VAL(INDEX_TIP_XROTATE), 1, 0, 0, &indexTip);
+			rotateVertices(VAL(INDEX_TIP_XROTATE) + index_tipXmidXrootX_angle, 1, 0, 0, &indexTip);
 			rotateVertices(VAL(INDEX_TIP_YROTATE), 0, 1, 0, &indexTip);
 			rotateVertices(VAL(INDEX_TIP_ZROTATE), 0, 0, 1, &indexTip);
 			translateVertices(0, 1.4, 0, &indexTip);
@@ -305,7 +331,7 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < indexTip.size(); ++i)	indexMid.push_back(indexTip.at(i));
-			rotateVertices(VAL(INDEX_MID_XROTATE), 1, 0, 0, &indexMid);
+			rotateVertices(VAL(INDEX_MID_XROTATE) + index_tipXmidXrootX_angle, 1, 0, 0, &indexMid);
 			rotateVertices(VAL(INDEX_MID_YROTATE), 0, 1, 0, &indexMid);
 			rotateVertices(VAL(INDEX_MID_ZROTATE), 0, 0, 1, &indexMid);
 			translateVertices(0, 1.4, 0, &indexMid);
@@ -319,7 +345,7 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < indexMid.size(); ++i)	indexRoot.push_back(indexMid.at(i));
 			rotateVertices(22.5, 0, 0, 1, &indexRoot);
-			rotateVertices(VAL(INDEX_ROOT_XROTATE), 1, 0, 0, &indexRoot);
+			rotateVertices(VAL(INDEX_ROOT_XROTATE) + index_tipXmidXrootX_angle, 1, 0, 0, &indexRoot);
 			rotateVertices(VAL(INDEX_ROOT_YROTATE), 0, 1, 0, &indexRoot);
 			rotateVertices(VAL(INDEX_ROOT_ZROTATE), 0, 0, 1, &indexRoot);
 			translateVertices(-1.25, 6, 0, &indexRoot);
@@ -334,7 +360,7 @@ void HandModel::draw()
 			middleTip.push_back(Vec3f(0, 1, 0));
 
 			// Move self only
-			rotateVertices(VAL(MIDDLE_TIP_XROTATE), 1, 0, 0, &middleTip);
+			rotateVertices(VAL(MIDDLE_TIP_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &middleTip);
 			rotateVertices(VAL(MIDDLE_TIP_YROTATE), 0, 1, 0, &middleTip);
 			rotateVertices(VAL(MIDDLE_TIP_ZROTATE), 0, 0, 1, &middleTip);
 			translateVertices(0, 1.4, 0, &middleTip);
@@ -347,7 +373,7 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < middleTip.size(); ++i)	middleMid.push_back(middleTip.at(i));
-			rotateVertices(VAL(MIDDLE_MID_XROTATE), 1, 0, 0, &middleMid);
+			rotateVertices(VAL(MIDDLE_MID_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &middleMid);
 			rotateVertices(VAL(MIDDLE_MID_YROTATE), 0, 1, 0, &middleMid);
 			rotateVertices(VAL(MIDDLE_MID_ZROTATE), 0, 0, 1, &middleMid);
 			translateVertices(0, 1.8, 0, &middleMid);
@@ -361,7 +387,7 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < middleMid.size(); ++i)	middleRoot.push_back(middleMid.at(i));
-			rotateVertices(VAL(MIDDLE_ROOT_XROTATE), 1, 0, 0, &middleRoot);
+			rotateVertices(VAL(MIDDLE_ROOT_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &middleRoot);
 			rotateVertices(VAL(MIDDLE_ROOT_YROTATE), 0, 1, 0, &middleRoot);
 			rotateVertices(VAL(MIDDLE_ROOT_ZROTATE), 0, 0, 1, &middleRoot);
 			translateVertices(0, 6.5, 0, &middleRoot);
@@ -376,7 +402,7 @@ void HandModel::draw()
 			ringTip.push_back(Vec3f(0, 1, 0));
 
 			// Move self only
-			rotateVertices(VAL(RING_TIP_XROTATE), 1, 0, 0, &ringTip);
+			rotateVertices(VAL(RING_TIP_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &ringTip);
 			rotateVertices(VAL(RING_TIP_YROTATE), 0, 1, 0, &ringTip);
 			rotateVertices(VAL(RING_TIP_ZROTATE), 0, 0, 1, &ringTip);
 			translateVertices(0, 1.4, 0, &ringTip);
@@ -389,7 +415,7 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < ringTip.size(); ++i)	ringMid.push_back(ringTip.at(i));
-			rotateVertices(VAL(RING_MID_XROTATE), 1, 0, 0, &ringMid);
+			rotateVertices(VAL(RING_MID_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &ringMid);
 			rotateVertices(VAL(RING_MID_YROTATE), 0, 1, 0, &ringMid);
 			rotateVertices(VAL(RING_MID_ZROTATE), 0, 0, 1, &ringMid);
 			translateVertices(0, 1.4, 0, &ringMid);
@@ -403,7 +429,7 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < ringMid.size(); ++i)	ringRoot.push_back(ringMid.at(i));
 			rotateVertices(-22.5, 0, 0, 1, &ringRoot);
-			rotateVertices(VAL(RING_ROOT_XROTATE), 1, 0, 0, &ringRoot);
+			rotateVertices(VAL(RING_ROOT_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &ringRoot);
 			rotateVertices(VAL(RING_ROOT_YROTATE), 0, 1, 0, &ringRoot);
 			rotateVertices(VAL(RING_ROOT_ZROTATE), 0, 0, 1, &ringRoot);
 			translateVertices(1.25, 6, 0, &ringRoot);
@@ -417,7 +443,7 @@ void HandModel::draw()
 			littleTip.push_back(Vec3f(0, 0.5, 0));
 
 			// Move self only
-			rotateVertices(VAL(LITTLE_TIP_XROTATE), 1, 0, 0, &littleTip);
+			rotateVertices(VAL(LITTLE_TIP_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &littleTip);
 			rotateVertices(VAL(LITTLE_TIP_YROTATE), 0, 1, 0, &littleTip);
 			rotateVertices(VAL(LITTLE_TIP_ZROTATE), 0, 0, 1, &littleTip);
 			translateVertices(0, 1, 0, &littleTip);
@@ -429,7 +455,7 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < littleTip.size(); ++i)	littleMid.push_back(littleTip.at(i));
-			rotateVertices(VAL(LITTLE_MID_XROTATE), 1, 0, 0, &littleMid);
+			rotateVertices(VAL(LITTLE_MID_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &littleMid);
 			rotateVertices(VAL(LITTLE_MID_YROTATE), 0, 1, 0, &littleMid);
 			rotateVertices(VAL(LITTLE_MID_ZROTATE), 0, 0, 1, &littleMid);
 			translateVertices(0, 1, 0, &littleMid);
@@ -442,7 +468,7 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < littleMid.size(); ++i)	littleRoot.push_back(littleMid.at(i));
 			rotateVertices(-45, 0, 0, 1, &littleRoot);
-			rotateVertices(VAL(LITTLE_ROOT_XROTATE), 1, 0, 0, &littleRoot);
+			rotateVertices(VAL(LITTLE_ROOT_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &littleRoot);
 			rotateVertices(VAL(LITTLE_ROOT_YROTATE), 0, 1, 0, &littleRoot);
 			rotateVertices(VAL(LITTLE_ROOT_ZROTATE), 0, 0, 1, &littleRoot);
 			translateVertices(2.5, 5, 0, &littleRoot);
