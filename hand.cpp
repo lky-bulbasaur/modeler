@@ -231,6 +231,12 @@ void HandModel::draw()
 	// projection matrix, don't bother with this ...
 	ModelerView::draw();
 
+	// Dynamic lighting
+	GLfloat light0Pos[] = { VAL(LIGHT0_XPOS), VAL(LIGHT0_YPOS), VAL(LIGHT0_ZPOS), 0 };
+	glLightfv(GL_LIGHT0, GL_POSITION, light0Pos);
+	GLfloat light1Pos[] = { VAL(LIGHT1_XPOS), VAL(LIGHT1_YPOS), VAL(LIGHT1_ZPOS), 0 };
+	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);
+
 	// draw the floor
 	setAmbientColor(.1f, .1f, .1f);
 	setDiffuseColor(COLOR_RED);
@@ -577,6 +583,12 @@ int main()
 	// Constructor is ModelerControl(name, minimumvalue, maximumvalue, 
 	// stepsize, defaultvalue)
 	ModelerControl controls[NUMCONTROLS];
+	controls[LIGHT0_XPOS] = ModelerControl("Light 0 X Position", -20, 20, 0.1f, 4);
+	controls[LIGHT0_YPOS] = ModelerControl("Light 0 Y Position", -20, 20, 0.1f, 2);
+	controls[LIGHT0_ZPOS] = ModelerControl("Light 0 Z Position", -20, 20, 0.1f, -4);
+	controls[LIGHT1_XPOS] = ModelerControl("Light 1 X Position", -20, 20, 0.1f, -2);
+	controls[LIGHT1_YPOS] = ModelerControl("Light 1 Y Position", -20, 20, 0.1f, 1);
+	controls[LIGHT1_ZPOS] = ModelerControl("Light 1 Z Position", -20, 20, 0.1f, 5);
 	controls[XPOS] = ModelerControl("Hand X Position", -5, 5, 0.1f, 0);
 	controls[YPOS] = ModelerControl("Hand Y Position", 0, 5, 0.1f, 0);
 	controls[ZPOS] = ModelerControl("Hand Z Position", -5, 5, 0.1f, 0);
