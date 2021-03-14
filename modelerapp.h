@@ -51,6 +51,8 @@ public:
     double GetControlValue(int controlNumber);
     void   SetControlValue(int controlNumber, double value);
 
+	bool GetAnimateValue() { return m_animating; }
+
 private:
 	// Private for singleton
 	ModelerApplication() : m_numControls(-1) {}
