@@ -272,7 +272,7 @@ Fl_Menu_Item ModelerUserInterface::menu_m_controlsMenuBar[] = {
  {"High Quality", 0,  (Fl_Callback*)ModelerUserInterface::cb_High, 0, 8, 0, 0, 14, 0},
  {"Medium Quality", 0,  (Fl_Callback*)ModelerUserInterface::cb_Medium, 0, 12, 0, 0, 14, 0},
  {"Low Quality", 0,  (Fl_Callback*)ModelerUserInterface::cb_Low, 0, 8, 0, 0, 14, 0},
- {"Poor Quality", 0,  (Fl_Callback*)ModelerUserInterface::cb_Poor, 0, 136, 0, 0, 14, 0},
+ {"Insanely High Quality (for static photo taking ONLY)", 0,  (Fl_Callback*)ModelerUserInterface::cb_Poor, 0, 136, 0, 0, 14, 0},
  {"Focus on Origin", 0,  (Fl_Callback*)ModelerUserInterface::cb_Focus, 0, 0, 0, 0, 14, 0},
  {"Frame All", 0,  (Fl_Callback*)ModelerUserInterface::cb_Frame, 0, 0, 0, 0, 14, 0},
  {0},
