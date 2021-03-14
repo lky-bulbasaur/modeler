@@ -5,8 +5,8 @@
 #include "modelerdraw.h"
 #include <FL/gl.h>
 #include <vector>
-#include <thread>
 
+#include "ThreadPool.h"
 #include "vec.h"
 #include "mat.h"
 #include "marchingcubesconst.h"
@@ -19,12 +19,14 @@ public:
 	HandModel(int x, int y, int w, int h, char* label)
 		: ModelerView(x, y, w, h, label) {
 		verticesList = new vector<Vec3f>();
+		marchingCubesMap = NULL;
 		MARCHING_CUBES_THRESHOLD = 17;
 		FLOOR_SIZE = 20.0;
 	}
 
 	~HandModel() {
 		delete verticesList;
+		if (marchingCubesMap != NULL) delete3DArray(gridNum + 1, marchingCubesMap);
 	}
 
 	virtual void draw();
@@ -39,13 +41,40 @@ public:
 
 	void updateMarchingCubesMap();
 
+	template <typename T>
+	void new3DArray(int size, T*** &list) {
+		list = new T** [size];
+		for (int i = 0; i < size; ++i) {
+			list[i] = new T* [size];
+			for (int j = 0; j < size; ++j) {
+				list[i][j] = new T[size];
+			}
+		}
+	}
+
+	template <typename T>
+	void delete3DArray(int size, T*** &list) {
+		for (int i = 0; i < size; ++i) {
+			for (int j = 0; j < size; ++j) {
+				delete [] list[i][j];
+			}
+			delete [] list[i];
+		}
+		delete [] list;
+	}
+
 private:
-	static const int GRID_NUM = 100;
+	static const int GRID_NUM_HIGH = 120;
+	static const int GRID_NUM_MEDIUM = 96;
+	static const int GRID_NUM_LOW = 64;
+	static const int GRID_NUM_POOR = 480;
+
+	int gridNum = GRID_NUM_MEDIUM;
 
 	double MARCHING_CUBES_THRESHOLD;
 	double FLOOR_SIZE;
 
-	bool marchingCubesMap[GRID_NUM + 1][GRID_NUM + 1][GRID_NUM + 1];
+	double*** marchingCubesMap;
 	vector<Vec3f>* verticesList;
 };
 
@@ -141,64 +170,59 @@ void HandModel::clearVerticesList() {
 void HandModel::updateMarchingCubesMap() {
 
 	// Select number of tests according to quality setting
-	int steps;
+	int oldGridNum = gridNum;
 	switch (ModelerDrawState::Instance()->m_quality) {
 	case HIGH:
-		steps = 1; break;
+		gridNum = GRID_NUM_HIGH; break;
 	case MEDIUM:
-		steps = 1; break;
+		gridNum = GRID_NUM_MEDIUM; break;
 	case LOW:
-		steps = 1; break;
+		gridNum = GRID_NUM_LOW; break;
 	case POOR:
-		steps = 1; break;
+		gridNum = GRID_NUM_POOR; break;
 	}
 
-	double cubeSize = 1.0 / GRID_NUM * FLOOR_SIZE * steps;
+	if (marchingCubesMap != NULL) delete3DArray(oldGridNum + 1, marchingCubesMap);
+	new3DArray(gridNum + 1, marchingCubesMap);
+
+	double cubeSize = 1.0 / gridNum * FLOOR_SIZE;
 	double halfCubeSize = cubeSize / 2.0;
 	double offset = FLOOR_SIZE / 2;
 
-	for (int i = 0; i < GRID_NUM + 1; i += steps) {
-		for (int j = 0; j < GRID_NUM + 1; j += steps) {
-			for (int k = 0; k < GRID_NUM + 1; k += steps) {
-				// Surface level is the summation of all 1/r^2, where r is the current point's distance from a vertex in the vertices list
-				double surfaceLevel = 0;
-
-				for (int n = 0; n < verticesList->size(); ++n) {
-					double x = i * cubeSize - verticesList->at(n)[0] - offset;
-					double y = j * cubeSize - verticesList->at(n)[1];
-					double z = k * cubeSize - verticesList->at(n)[2] - offset;
-					surfaceLevel += 1 / (x * x + y * y + z * z);
-				}
-
-				if (surfaceLevel >= MARCHING_CUBES_THRESHOLD) {
-					marchingCubesMap[i][j][k] = true;
-				}
-				else {
-					marchingCubesMap[i][j][k] = false;
-				}
+	for (int i = 0; i < gridNum + 1; ++i) {
+		for (int j = 0; j < gridNum + 1; ++j) {
+			for (int k = 0; k < gridNum + 1; ++k) {
+				marchingCubesMap[i][j][k] = 0;
 			}
 		}
 	}
+
+	ThreadPool* pool = new ThreadPool(8);
+
+	for (int n = 0; n < verticesList->size(); ++n) {
+		pool->enqueue([this, cubeSize, offset, n]() {
+			for (int i = 0; i < gridNum + 1; ++i) {
+				for (int j = 0; j < gridNum * 3 / 5 + 1; ++j) {
+					for (int k = gridNum * 2 / 5; k < gridNum + 1; ++k) {
+						double x = i * cubeSize - verticesList->at(n)[0] - offset;
+						double y = j * cubeSize - verticesList->at(n)[1];
+						double z = k * cubeSize - verticesList->at(n)[2] - offset;
+						
+						marchingCubesMap[i][j][k] += 1 / (x * x + y * y + z * z);
+					}
+				}
+			}
+		});
+	}
+
+	delete pool;
 }
 
 // We are going to override (is that the right word?) the draw()
 // method of ModelerView to draw out HandModel
 void HandModel::draw()
 {
-	// Select number of tests according to quality setting
-	int steps;
-	switch (ModelerDrawState::Instance()->m_quality) {
-	case HIGH:
-		steps = 1; break;
-	case MEDIUM:
-		steps = 1; break;
-	case LOW:
-		steps = 1; break;
-	case POOR:
-		steps = 1; break;
-	}
-
-	double cubeSize = 1.0 / GRID_NUM * FLOOR_SIZE * steps;
+	double cubeSize = 1.0 / gridNum * FLOOR_SIZE;
 	double halfCubeSize = cubeSize / 2.0;
 	double offset = FLOOR_SIZE / 2;
 
@@ -207,12 +231,18 @@ void HandModel::draw()
 	// projection matrix, don't bother with this ...
 	ModelerView::draw();
 
+	// Dynamic lighting
+	GLfloat light0Pos[] = { VAL(LIGHT0_XPOS), VAL(LIGHT0_YPOS), VAL(LIGHT0_ZPOS), 0 };
+	glLightfv(GL_LIGHT0, GL_POSITION, light0Pos);
+	GLfloat light1Pos[] = { VAL(LIGHT1_XPOS), VAL(LIGHT1_YPOS), VAL(LIGHT1_ZPOS), 0 };
+	glLightfv(GL_LIGHT1, GL_POSITION, light1Pos);
+
 	// draw the floor
 	setAmbientColor(.1f, .1f, .1f);
 	setDiffuseColor(COLOR_RED);
 	glPushMatrix();
 	glTranslated(-5, 0, -5);
-	drawBox(10, 0.01f, 10);
+	// drawBox(10, 0.01f, 10);	// Uncomment this if you want to see the hand clip through the floor
 	glPopMatrix();
 
 	clearVerticesList();
@@ -421,7 +451,7 @@ void HandModel::draw()
 	//	PALM
 	// =====================================================================================================================
 	vector<Vec3f> palm;
-		palm.push_back(Vec3f(-2, 3, 0));
+		palm.push_back(Vec3f(-2, 3.5, 0));
 		palm.push_back(Vec3f(-2, 4, 0));
 		palm.push_back(Vec3f(-1.5, 3, 0));
 		palm.push_back(Vec3f(-1.5, 4, 0));
@@ -435,20 +465,20 @@ void HandModel::draw()
 		palm.push_back(Vec3f(-0.5, 3, -0.5));
 		palm.push_back(Vec3f(-0.5, 4, -0.25));
 		palm.push_back(Vec3f(-0.5, 5.5, -0.1));
-		palm.push_back(Vec3f(0, 1, -0.25));
+		palm.push_back(Vec3f(0, 1.5, -0.25));
 		palm.push_back(Vec3f(0, 2, -0.25));
 		palm.push_back(Vec3f(0, 3.5, -0.65));
-		palm.push_back(Vec3f(0.5, 1, -0.25));
+		palm.push_back(Vec3f(0.5, 1.5, -0.25));
 		palm.push_back(Vec3f(0.5, 2, -0.45));
 		palm.push_back(Vec3f(0.5, 3, -0.65));
 		palm.push_back(Vec3f(0.5, 4, -0.45));
 		palm.push_back(Vec3f(0.5, 5, -0.25));
-		palm.push_back(Vec3f(1, 1, -0.25));
+		palm.push_back(Vec3f(1, 1.5, -0.25));
 		palm.push_back(Vec3f(1, 2, -0.25));
 		palm.push_back(Vec3f(1, 3, -0.25));
 		palm.push_back(Vec3f(1, 4, -0.25));
 		palm.push_back(Vec3f(1, 5.5, -0.1));
-		palm.push_back(Vec3f(1.5, 2, -0.25));
+		palm.push_back(Vec3f(1.5, 3, -0.25));
 		palm.push_back(Vec3f(1.5, 3, -0.1));
 		palm.push_back(Vec3f(1.5, 4, -0.1));
 		palm.push_back(Vec3f(2, 5, -0.25));
@@ -474,23 +504,26 @@ void HandModel::draw()
 	setDiffuseColor(1, 0.6, 0);
 	glPushMatrix();
 	glTranslated(VAL(XPOS), VAL(YPOS), VAL(ZPOS));
-	for (int i = 0; i < GRID_NUM; i += steps) {
-		for (int j = 0; j < GRID_NUM; j += steps) {
-			for (int k = 0; k < GRID_NUM; k += steps) {
+	glRotated(VAL(XROTATE), 1, 0, 0);
+	glRotated(VAL(YROTATE), 0, 1, 0);
+	glRotated(VAL(ZROTATE), 0, 0, 1);
+	for (int i = 0; i < gridNum; ++i) {
+		for (int j = 0; j < gridNum * 3 / 5; ++j) {
+			for (int k = gridNum * 2 / 5; k < gridNum; ++k) {
 				int index = 0;	// 00000000, each bit representing the value of a corner of the current cube
 				double x = i * cubeSize - offset;
 				double y = j * cubeSize;
 				double z = k * cubeSize - offset;
 
 				// Perform bitwise-OR to manipulate the value of index, for fitting into EDGE_TABLE later
-				if (marchingCubesMap[i][j][k])				index |= 1;		// v0
-				if (marchingCubesMap[i + 1][j][k])			index |= 2;		// v1
-				if (marchingCubesMap[i + 1][j][k + 1])		index |= 4;		// v2
-				if (marchingCubesMap[i][j][k + 1])			index |= 8;		// v3
-				if (marchingCubesMap[i][j + 1][k])			index |= 16;	// v4
-				if (marchingCubesMap[i + 1][j + 1][k])		index |= 32;	// v5
-				if (marchingCubesMap[i + 1][j + 1][k + 1])	index |= 64;	// v6
-				if (marchingCubesMap[i][j + 1][k + 1])		index |= 128;	// v7	
+				if (marchingCubesMap[i][j][k] >= MARCHING_CUBES_THRESHOLD)				index |= 1;		// v0
+				if (marchingCubesMap[i + 1][j][k] >= MARCHING_CUBES_THRESHOLD)			index |= 2;		// v1
+				if (marchingCubesMap[i + 1][j][k + 1] >= MARCHING_CUBES_THRESHOLD)		index |= 4;		// v2
+				if (marchingCubesMap[i][j][k + 1] >= MARCHING_CUBES_THRESHOLD)			index |= 8;		// v3
+				if (marchingCubesMap[i][j + 1][k] >= MARCHING_CUBES_THRESHOLD)			index |= 16;	// v4
+				if (marchingCubesMap[i + 1][j + 1][k] >= MARCHING_CUBES_THRESHOLD)		index |= 32;	// v5
+				if (marchingCubesMap[i + 1][j + 1][k + 1] >= MARCHING_CUBES_THRESHOLD)	index |= 64;	// v6
+				if (marchingCubesMap[i][j + 1][k + 1] >= MARCHING_CUBES_THRESHOLD)		index |= 128;	// v7	
 
 				if (index == 0) continue;
 
@@ -525,8 +558,7 @@ void HandModel::draw()
 						case 11:
 							vertices[m] = Vec3f(x, y + halfCubeSize, z + cubeSize); break;
 						default:
-							validTriangle = false;
-							break;
+							validTriangle = false; break;
 						}
 					}
 
@@ -543,8 +575,6 @@ void HandModel::draw()
 
 }
 
-// 
-
 // Comment all other main() and uncomment this if you want the modeler to load this
 
 int main()
@@ -553,46 +583,55 @@ int main()
 	// Constructor is ModelerControl(name, minimumvalue, maximumvalue, 
 	// stepsize, defaultvalue)
 	ModelerControl controls[NUMCONTROLS];
-	controls[XPOS] = ModelerControl("X Position", -5, 5, 0.1f, 0);
-	controls[YPOS] = ModelerControl("Y Position", 0, 5, 0.1f, 0);
-	controls[ZPOS] = ModelerControl("Z Position", -5, 5, 0.1f, 0);
-	controls[THUMB_TIP_XROTATE] = ModelerControl("Thumb Tip X Rotation", -90, 90, 1, 0);
+	controls[LIGHT0_XPOS] = ModelerControl("Light 0 X Position", -20, 20, 0.1f, 4);
+	controls[LIGHT0_YPOS] = ModelerControl("Light 0 Y Position", -20, 20, 0.1f, 2);
+	controls[LIGHT0_ZPOS] = ModelerControl("Light 0 Z Position", -20, 20, 0.1f, -4);
+	controls[LIGHT1_XPOS] = ModelerControl("Light 1 X Position", -20, 20, 0.1f, -2);
+	controls[LIGHT1_YPOS] = ModelerControl("Light 1 Y Position", -20, 20, 0.1f, 1);
+	controls[LIGHT1_ZPOS] = ModelerControl("Light 1 Z Position", -20, 20, 0.1f, 5);
+	controls[XPOS] = ModelerControl("Hand X Position", -5, 5, 0.1f, 0);
+	controls[YPOS] = ModelerControl("Hand Y Position", 0, 5, 0.1f, 0);
+	controls[ZPOS] = ModelerControl("Hand Z Position", -5, 5, 0.1f, 0);
+	controls[XROTATE] = ModelerControl("Hand X Rotation", -90, 90, 1, 0);
+	controls[YROTATE] = ModelerControl("Hand Y Rotation", -90, 90, 1, 0);
+	controls[ZROTATE] = ModelerControl("Hand Z Rotation", -90, 90, 1, 0);
+	controls[THUMB_TIP_XROTATE] = ModelerControl("Thumb Tip X Rotation", 0, 90, 1, 0);
 	controls[THUMB_TIP_YROTATE] = ModelerControl("Thumb Tip Y Rotation", -90, 90, 1, 0);
 	controls[THUMB_TIP_ZROTATE] = ModelerControl("Thumb Tip Z Rotation", -90, 90, 1, 0);
 	controls[THUMB_ROOT_XROTATE] = ModelerControl("Thumb Root X Rotation", -90, 90, 1, 0);
 	controls[THUMB_ROOT_YROTATE] = ModelerControl("Thumb Root Y Rotation", -90, 90, 1, 0);
 	controls[THUMB_ROOT_ZROTATE] = ModelerControl("Thumb Root Z Rotation", -90, 90, 1, 0);
-	controls[INDEX_TIP_XROTATE] = ModelerControl("Index Finger Tip X Rotation", -90, 90, 1, 0);
+	controls[INDEX_TIP_XROTATE] = ModelerControl("Index Finger Tip X Rotation", 0, 90, 1, 0);
 	controls[INDEX_TIP_YROTATE] = ModelerControl("Index Finger Tip Y Rotation", -90, 90, 1, 0);
 	controls[INDEX_TIP_ZROTATE] = ModelerControl("Index Finger Tip Z Rotation", -90, 90, 1, 0);
-	controls[INDEX_MID_XROTATE] = ModelerControl("Index Finger Mid X Rotation", -90, 90, 1, 0);
+	controls[INDEX_MID_XROTATE] = ModelerControl("Index Finger Mid X Rotation", 0, 90, 1, 0);
 	controls[INDEX_MID_YROTATE] = ModelerControl("Index Finger Mid Y Rotation", -90, 90, 1, 0);
 	controls[INDEX_MID_ZROTATE] = ModelerControl("Index Finger Mid Z Rotation", -90, 90, 1, 0);
 	controls[INDEX_ROOT_XROTATE] = ModelerControl("Index Finger Root X Rotation", -90, 90, 1, 0);
 	controls[INDEX_ROOT_YROTATE] = ModelerControl("Index Finger Root Y Rotation", -90, 90, 1, 0);
 	controls[INDEX_ROOT_ZROTATE] = ModelerControl("Index Finger Root Z Rotation", -90, 90, 1, 0);
-	controls[MIDDLE_TIP_XROTATE] = ModelerControl("Middle Finger Tip X Rotation", -90, 90, 1, 0);
+	controls[MIDDLE_TIP_XROTATE] = ModelerControl("Middle Finger Tip X Rotation", 0, 90, 1, 0);
 	controls[MIDDLE_TIP_YROTATE] = ModelerControl("Middle Finger Tip Y Rotation", -90, 90, 1, 0);
 	controls[MIDDLE_TIP_ZROTATE] = ModelerControl("Middle Finger Tip Z Rotation", -90, 90, 1, 0);
-	controls[MIDDLE_MID_XROTATE] = ModelerControl("Middle Finger Mid X Rotation", -90, 90, 1, 0);
+	controls[MIDDLE_MID_XROTATE] = ModelerControl("Middle Finger Mid X Rotation", 0, 90, 1, 0);
 	controls[MIDDLE_MID_YROTATE] = ModelerControl("Middle Finger Mid Y Rotation", -90, 90, 1, 0);
 	controls[MIDDLE_MID_ZROTATE] = ModelerControl("Middle Finger Mid Z Rotation", -90, 90, 1, 0);
 	controls[MIDDLE_ROOT_XROTATE] = ModelerControl("Middle Finger Root X Rotation", -90, 90, 1, 0);
 	controls[MIDDLE_ROOT_YROTATE] = ModelerControl("Middle Finger Root Y Rotation", -90, 90, 1, 0);
 	controls[MIDDLE_ROOT_ZROTATE] = ModelerControl("Middle Finger Root Z Rotation", -90, 90, 1, 0);
-	controls[RING_TIP_XROTATE] = ModelerControl("Ring Finger Tip X Rotation", -90, 90, 1, 0);
+	controls[RING_TIP_XROTATE] = ModelerControl("Ring Finger Tip X Rotation", 0, 90, 1, 0);
 	controls[RING_TIP_YROTATE] = ModelerControl("Ring Finger Tip Y Rotation", -90, 90, 1, 0);
 	controls[RING_TIP_ZROTATE] = ModelerControl("Ring Finger Tip Z Rotation", -90, 90, 1, 0);
-	controls[RING_MID_XROTATE] = ModelerControl("Ring Finger Mid X Rotation", -90, 90, 1, 0);
+	controls[RING_MID_XROTATE] = ModelerControl("Ring Finger Mid X Rotation", 0, 90, 1, 0);
 	controls[RING_MID_YROTATE] = ModelerControl("Ring Finger Mid Y Rotation", -90, 90, 1, 0);
 	controls[RING_MID_ZROTATE] = ModelerControl("Ring Finger Mid Z Rotation", -90, 90, 1, 0);
 	controls[RING_ROOT_XROTATE] = ModelerControl("Ring Finger Root X Rotation", -90, 90, 1, 0);
 	controls[RING_ROOT_YROTATE] = ModelerControl("Ring Finger Root Y Rotation", -90, 90, 1, 0);
 	controls[RING_ROOT_ZROTATE] = ModelerControl("Ring Finger Root Z Rotation", -90, 90, 1, 0);
-	controls[LITTLE_TIP_XROTATE] = ModelerControl("Little Finger Tip X Rotation", -90, 90, 1, 0);
+	controls[LITTLE_TIP_XROTATE] = ModelerControl("Little Finger Tip X Rotation", 0, 90, 1, 0);
 	controls[LITTLE_TIP_YROTATE] = ModelerControl("Little Finger Tip Y Rotation", -90, 90, 1, 0);
 	controls[LITTLE_TIP_ZROTATE] = ModelerControl("Little Finger Tip Z Rotation", -90, 90, 1, 0);
-	controls[LITTLE_MID_XROTATE] = ModelerControl("Little Finger Mid X Rotation", -90, 90, 1, 0);
+	controls[LITTLE_MID_XROTATE] = ModelerControl("Little Finger Mid X Rotation", 0, 90, 1, 0);
 	controls[LITTLE_MID_YROTATE] = ModelerControl("Little Finger Mid Y Rotation", -90, 90, 1, 0);
 	controls[LITTLE_MID_ZROTATE] = ModelerControl("Little Finger Mid Z Rotation", -90, 90, 1, 0);
 	controls[LITTLE_ROOT_XROTATE] = ModelerControl("Little Finger Root X Rotation", -90, 90, 1, 0);
