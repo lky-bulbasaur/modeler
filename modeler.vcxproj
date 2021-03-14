@@ -197,6 +197,7 @@
     <ClInclude Include="modelerglobals.h" />
     <ClInclude Include="modelerui.h" />
     <ClInclude Include="modelerview.h" />
+    <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="vec.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
