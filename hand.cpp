@@ -11,6 +11,7 @@
 #include "mat.h"
 #include "marchingcubesconst.h"
 #include "modelerglobals.h"
+#include "bitmap.h"
 
 #include <iostream>
 
@@ -599,6 +600,10 @@ void HandModel::draw()
 	}
 	glPopMatrix();
 
+	glPushMatrix();
+		glTranslated(5.0, -0.25, -0.25);
+		drawDonut(1.0, 0.65);
+	glPopMatrix();
 }
 
 // Comment all other main() and uncomment this if you want the modeler to load this

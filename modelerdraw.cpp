@@ -1,8 +1,11 @@
 #include "modelerdraw.h"
+#include "bitmap.h"
 #include <FL/gl.h>
 #include <GL/glu.h>
 #include <cstdio>
 #include <math.h>
+
+#include <iostream>
 
 // ********************************************************
 // Support functions from previous version of modeler
@@ -416,14 +419,73 @@ void drawTriangle( double x1, double y1, double z1,
     }
 }
 
+void drawTorus(double width, double r) {
+    ModelerDrawState* mds = ModelerDrawState::Instance();
+    int divisions;
 
+    _setupOpenGl();
 
+    switch (mds->m_quality)
+    {
+    case HIGH:
+        divisions = 32; break;
+    case MEDIUM:
+        divisions = 20; break;
+    case LOW:
+        divisions = 12; break;
+    case POOR:
+        divisions = 8; break;
+    }
 
+    if (mds->m_rayFile)
+    {
+        _dump_current_modelview();
+        fprintf(mds->m_rayFile,
+            "torus { outer_width=%f; inner_radius=%f;\n", width, r);
+        _dump_current_material();
+        fprintf(mds->m_rayFile, "})\n");
+    }
+    else
+    {
+        double numOfSegments = divisions * 10;
+        for (int i = 0; i < numOfSegments; i++) {
+            GLdouble angle = M_PI * 2.0 / numOfSegments * i;
+            GLdouble x, z;
+            x = width * cos(angle);
+            z = width * sin(angle);
+            glPushMatrix();
+            glTranslated(-x, 0.0, z);
+            glRotated(angle / M_PI * 180.0, 0.0, 1.0, 0.0);
+            drawCylinder(M_PI * 2.0 / numOfSegments * width * 5, r, r);
+            glPopMatrix();
+        }
+    }
+}
 
+void drawDonut(double width, double r) {
+    int textureWidth, textureHeight;
+    GLubyte* data = readBMP("./donutTexture.bmp", textureWidth, textureHeight);
+    if (!data)
+        std::cout << "hi" << std::endl;
 
+    // Create one OpenGL texture
+    GLuint textureID;
+    glGenTextures(1, &textureID);
 
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, textureID);
 
+    // Give the image to OpenGL
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
+    glEnable(GL_TEXTURE_2D);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    glBindTexture(GL_TEXTURE_2D, textureID);
 
+    drawTorus(width, r);
 
+    glDisable(GL_TEXTURE_2D);
+}
