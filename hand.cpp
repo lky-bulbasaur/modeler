@@ -236,6 +236,12 @@ void HandModel::draw()
 	double cubeSize = 1.0 / gridNum * FLOOR_SIZE;
 	double halfCubeSize = cubeSize / 2.0;
 	double offset = FLOOR_SIZE / 2;
+	double reflect = 1.0;
+
+	// Setting reflect to -1 will reflect all vertices along the y-axis, effectively making the modeler draw right hand insteand of left hand
+	if (VAL(INSTANCE_RIGHT_HAND)) {
+		reflect = -1.0;
+	}
 
 	// This call takes care of a lot of the nasty projection 
 	// matrix stuff.  Unless you want to fudge directly with the 
@@ -290,8 +296,8 @@ void HandModel::draw()
 
 			// Move self only
 			rotateVertices(VAL(THUMB_TIP_XROTATE) + thumb_tipXrootX_angle, 1, 0, 0, &thumbTip);
-			rotateVertices(VAL(THUMB_TIP_YROTATE) + thumb_tipYrootY_angle, 0, 1, 0, &thumbTip);
-			rotateVertices(VAL(THUMB_TIP_ZROTATE), 0, 0, 1, &thumbTip);
+			rotateVertices(reflect * VAL(THUMB_TIP_YROTATE) + thumb_tipYrootY_angle, 0, 1, 0, &thumbTip);
+			rotateVertices(reflect * VAL(THUMB_TIP_ZROTATE), 0, 0, 1, &thumbTip);
 			translateVertices(0, 1.4, 0, &thumbTip);
 
 		// Thumb root
@@ -302,11 +308,11 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < thumbTip.size(); ++i)	thumbRoot.push_back(thumbTip.at(i));
-			rotateVertices(45, 0, 0, 1, &thumbRoot);
+			rotateVertices(reflect * 45, 0, 0, 1, &thumbRoot);
 			rotateVertices(VAL(THUMB_ROOT_XROTATE) + thumb_tipXrootX_angle, 1, 0, 0, &thumbRoot);
-			rotateVertices(VAL(THUMB_ROOT_YROTATE) + thumb_tipYrootY_angle, 0, 1, 0, &thumbRoot);
-			rotateVertices(VAL(THUMB_ROOT_ZROTATE), 0, 0, 1, &thumbRoot);
-			translateVertices(-2.5, 4, 0, &thumbRoot);
+			rotateVertices(reflect * VAL(THUMB_ROOT_YROTATE) + thumb_tipYrootY_angle, 0, 1, 0, &thumbRoot);
+			rotateVertices(reflect * VAL(THUMB_ROOT_ZROTATE), 0, 0, 1, &thumbRoot);
+			translateVertices(reflect * -2.5, 4, 0, &thumbRoot);
 
 	// =====================================================================================================================
 	//	INDEX FINGER
@@ -319,8 +325,8 @@ void HandModel::draw()
 
 			// Move self only
 			rotateVertices(VAL(INDEX_TIP_XROTATE) + index_tipXmidXrootX_angle, 1, 0, 0, &indexTip);
-			rotateVertices(VAL(INDEX_TIP_YROTATE), 0, 1, 0, &indexTip);
-			rotateVertices(VAL(INDEX_TIP_ZROTATE), 0, 0, 1, &indexTip);
+			rotateVertices(reflect * VAL(INDEX_TIP_YROTATE), 0, 1, 0, &indexTip);
+			rotateVertices(reflect * VAL(INDEX_TIP_ZROTATE), 0, 0, 1, &indexTip);
 			translateVertices(0, 1.4, 0, &indexTip);
 
 		// Index mid
@@ -332,8 +338,8 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < indexTip.size(); ++i)	indexMid.push_back(indexTip.at(i));
 			rotateVertices(VAL(INDEX_MID_XROTATE) + index_tipXmidXrootX_angle, 1, 0, 0, &indexMid);
-			rotateVertices(VAL(INDEX_MID_YROTATE), 0, 1, 0, &indexMid);
-			rotateVertices(VAL(INDEX_MID_ZROTATE), 0, 0, 1, &indexMid);
+			rotateVertices(reflect * VAL(INDEX_MID_YROTATE), 0, 1, 0, &indexMid);
+			rotateVertices(reflect * VAL(INDEX_MID_ZROTATE), 0, 0, 1, &indexMid);
 			translateVertices(0, 1.4, 0, &indexMid);
 
 		// Index root
@@ -344,11 +350,11 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < indexMid.size(); ++i)	indexRoot.push_back(indexMid.at(i));
-			rotateVertices(22.5, 0, 0, 1, &indexRoot);
+			rotateVertices(reflect * 22.5, 0, 0, 1, &indexRoot);
 			rotateVertices(VAL(INDEX_ROOT_XROTATE) + index_tipXmidXrootX_angle, 1, 0, 0, &indexRoot);
-			rotateVertices(VAL(INDEX_ROOT_YROTATE), 0, 1, 0, &indexRoot);
-			rotateVertices(VAL(INDEX_ROOT_ZROTATE), 0, 0, 1, &indexRoot);
-			translateVertices(-1.25, 6, 0, &indexRoot);
+			rotateVertices(reflect* VAL(INDEX_ROOT_YROTATE), 0, 1, 0, &indexRoot);
+			rotateVertices(reflect* VAL(INDEX_ROOT_ZROTATE), 0, 0, 1, &indexRoot);
+			translateVertices(reflect * -1.25, 6, 0, &indexRoot);
 	
 	// =====================================================================================================================
 	//	MIDDLE FINGER
@@ -361,8 +367,8 @@ void HandModel::draw()
 
 			// Move self only
 			rotateVertices(VAL(MIDDLE_TIP_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &middleTip);
-			rotateVertices(VAL(MIDDLE_TIP_YROTATE), 0, 1, 0, &middleTip);
-			rotateVertices(VAL(MIDDLE_TIP_ZROTATE), 0, 0, 1, &middleTip);
+			rotateVertices(reflect * VAL(MIDDLE_TIP_YROTATE), 0, 1, 0, &middleTip);
+			rotateVertices(reflect * VAL(MIDDLE_TIP_ZROTATE), 0, 0, 1, &middleTip);
 			translateVertices(0, 1.4, 0, &middleTip);
 
 		// Middle mid
@@ -374,8 +380,8 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < middleTip.size(); ++i)	middleMid.push_back(middleTip.at(i));
 			rotateVertices(VAL(MIDDLE_MID_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &middleMid);
-			rotateVertices(VAL(MIDDLE_MID_YROTATE), 0, 1, 0, &middleMid);
-			rotateVertices(VAL(MIDDLE_MID_ZROTATE), 0, 0, 1, &middleMid);
+			rotateVertices(reflect * VAL(MIDDLE_MID_YROTATE), 0, 1, 0, &middleMid);
+			rotateVertices(reflect * VAL(MIDDLE_MID_ZROTATE), 0, 0, 1, &middleMid);
 			translateVertices(0, 1.8, 0, &middleMid);
 
 		// Middle root
@@ -388,8 +394,8 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < middleMid.size(); ++i)	middleRoot.push_back(middleMid.at(i));
 			rotateVertices(VAL(MIDDLE_ROOT_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &middleRoot);
-			rotateVertices(VAL(MIDDLE_ROOT_YROTATE), 0, 1, 0, &middleRoot);
-			rotateVertices(VAL(MIDDLE_ROOT_ZROTATE), 0, 0, 1, &middleRoot);
+			rotateVertices(reflect * VAL(MIDDLE_ROOT_YROTATE), 0, 1, 0, &middleRoot);
+			rotateVertices(reflect * VAL(MIDDLE_ROOT_ZROTATE), 0, 0, 1, &middleRoot);
 			translateVertices(0, 6.5, 0, &middleRoot);
 
 	// =====================================================================================================================
@@ -403,8 +409,8 @@ void HandModel::draw()
 
 			// Move self only
 			rotateVertices(VAL(RING_TIP_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &ringTip);
-			rotateVertices(VAL(RING_TIP_YROTATE), 0, 1, 0, &ringTip);
-			rotateVertices(VAL(RING_TIP_ZROTATE), 0, 0, 1, &ringTip);
+			rotateVertices(reflect * VAL(RING_TIP_YROTATE), 0, 1, 0, &ringTip);
+			rotateVertices(reflect * VAL(RING_TIP_ZROTATE), 0, 0, 1, &ringTip);
 			translateVertices(0, 1.4, 0, &ringTip);
 
 		// Ring mid
@@ -416,8 +422,8 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < ringTip.size(); ++i)	ringMid.push_back(ringTip.at(i));
 			rotateVertices(VAL(RING_MID_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &ringMid);
-			rotateVertices(VAL(RING_MID_YROTATE), 0, 1, 0, &ringMid);
-			rotateVertices(VAL(RING_MID_ZROTATE), 0, 0, 1, &ringMid);
+			rotateVertices(reflect * VAL(RING_MID_YROTATE), 0, 1, 0, &ringMid);
+			rotateVertices(reflect * VAL(RING_MID_ZROTATE), 0, 0, 1, &ringMid);
 			translateVertices(0, 1.4, 0, &ringMid);
 
 		// Ring root
@@ -428,11 +434,11 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < ringMid.size(); ++i)	ringRoot.push_back(ringMid.at(i));
-			rotateVertices(-22.5, 0, 0, 1, &ringRoot);
+			rotateVertices(reflect * -22.5, 0, 0, 1, &ringRoot);
 			rotateVertices(VAL(RING_ROOT_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &ringRoot);
-			rotateVertices(VAL(RING_ROOT_YROTATE), 0, 1, 0, &ringRoot);
-			rotateVertices(VAL(RING_ROOT_ZROTATE), 0, 0, 1, &ringRoot);
-			translateVertices(1.25, 6, 0, &ringRoot);
+			rotateVertices(reflect * VAL(RING_ROOT_YROTATE), 0, 1, 0, &ringRoot);
+			rotateVertices(reflect * VAL(RING_ROOT_ZROTATE), 0, 0, 1, &ringRoot);
+			translateVertices(reflect * 1.25, 6, 0, &ringRoot);
 
 	// =====================================================================================================================
 	//	LITTLE FINGER
@@ -444,8 +450,8 @@ void HandModel::draw()
 
 			// Move self only
 			rotateVertices(VAL(LITTLE_TIP_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &littleTip);
-			rotateVertices(VAL(LITTLE_TIP_YROTATE), 0, 1, 0, &littleTip);
-			rotateVertices(VAL(LITTLE_TIP_ZROTATE), 0, 0, 1, &littleTip);
+			rotateVertices(reflect * VAL(LITTLE_TIP_YROTATE), 0, 1, 0, &littleTip);
+			rotateVertices(reflect * VAL(LITTLE_TIP_ZROTATE), 0, 0, 1, &littleTip);
 			translateVertices(0, 1, 0, &littleTip);
 
 		// Little mid
@@ -456,8 +462,8 @@ void HandModel::draw()
 			// Also move children
 			for (int i = 0; i < littleTip.size(); ++i)	littleMid.push_back(littleTip.at(i));
 			rotateVertices(VAL(LITTLE_MID_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &littleMid);
-			rotateVertices(VAL(LITTLE_MID_YROTATE), 0, 1, 0, &littleMid);
-			rotateVertices(VAL(LITTLE_MID_ZROTATE), 0, 0, 1, &littleMid);
+			rotateVertices(reflect * VAL(LITTLE_MID_YROTATE), 0, 1, 0, &littleMid);
+			rotateVertices(reflect * VAL(LITTLE_MID_ZROTATE), 0, 0, 1, &littleMid);
 			translateVertices(0, 1, 0, &littleMid);
 
 		// Little root
@@ -467,49 +473,49 @@ void HandModel::draw()
 
 			// Also move children
 			for (int i = 0; i < littleMid.size(); ++i)	littleRoot.push_back(littleMid.at(i));
-			rotateVertices(-45, 0, 0, 1, &littleRoot);
+			rotateVertices(reflect * -45, 0, 0, 1, &littleRoot);
 			rotateVertices(VAL(LITTLE_ROOT_XROTATE) + rest_tipXmidXrootX_angle, 1, 0, 0, &littleRoot);
-			rotateVertices(VAL(LITTLE_ROOT_YROTATE), 0, 1, 0, &littleRoot);
-			rotateVertices(VAL(LITTLE_ROOT_ZROTATE), 0, 0, 1, &littleRoot);
-			translateVertices(2.5, 5, 0, &littleRoot);
+			rotateVertices(reflect * VAL(LITTLE_ROOT_YROTATE), 0, 1, 0, &littleRoot);
+			rotateVertices(reflect * VAL(LITTLE_ROOT_ZROTATE), 0, 0, 1, &littleRoot);
+			translateVertices(reflect * 2.5, 5, 0, &littleRoot);
 
 	// =====================================================================================================================
 	//	PALM
 	// =====================================================================================================================
 	vector<Vec3f> palm;
-		palm.push_back(Vec3f(-2, 3.5, 0));
-		palm.push_back(Vec3f(-2, 4, 0));
-		palm.push_back(Vec3f(-1.5, 3, 0));
-		palm.push_back(Vec3f(-1.5, 4, 0));
-		palm.push_back(Vec3f(-1.25, 5.5, -0.25));
-		palm.push_back(Vec3f(-0.75, 2, -0.5));
-		palm.push_back(Vec3f(-0.75, 4, -0.25));
-		palm.push_back(Vec3f(-1, 2.5, 0));
-		palm.push_back(Vec3f(-1, 3, -0.25));
-		palm.push_back(Vec3f(-1, 4, -0.25));
-		palm.push_back(Vec3f(-0.5, 2, -0.5));
-		palm.push_back(Vec3f(-0.5, 3, -0.5));
-		palm.push_back(Vec3f(-0.5, 4, -0.25));
-		palm.push_back(Vec3f(-0.5, 5.5, -0.1));
+		palm.push_back(Vec3f(reflect * -2, 3.5, 0));
+		palm.push_back(Vec3f(reflect * -2, 4, 0));
+		palm.push_back(Vec3f(reflect * -1.5, 3, 0));
+		palm.push_back(Vec3f(reflect * -1.5, 4, 0));
+		palm.push_back(Vec3f(reflect * -1.25, 5.5, -0.25));
+		palm.push_back(Vec3f(reflect * -0.75, 2, -0.5));
+		palm.push_back(Vec3f(reflect * -0.75, 4, -0.25));
+		palm.push_back(Vec3f(reflect * -1, 2.5, 0));
+		palm.push_back(Vec3f(reflect * -1, 3, -0.25));
+		palm.push_back(Vec3f(reflect * -1, 4, -0.25));
+		palm.push_back(Vec3f(reflect * -0.5, 2, -0.5));
+		palm.push_back(Vec3f(reflect * -0.5, 3, -0.5));
+		palm.push_back(Vec3f(reflect * -0.5, 4, -0.25));
+		palm.push_back(Vec3f(reflect * -0.5, 5.5, -0.1));
 		palm.push_back(Vec3f(0, 1.5, -0.25));
 		palm.push_back(Vec3f(0, 2, -0.25));
 		palm.push_back(Vec3f(0, 3.5, -0.65));
-		palm.push_back(Vec3f(0.5, 1.5, -0.25));
-		palm.push_back(Vec3f(0.5, 2, -0.45));
-		palm.push_back(Vec3f(0.5, 3, -0.65));
-		palm.push_back(Vec3f(0.5, 4, -0.45));
-		palm.push_back(Vec3f(0.5, 5, -0.25));
-		palm.push_back(Vec3f(1, 1.5, -0.25));
-		palm.push_back(Vec3f(1, 2, -0.25));
-		palm.push_back(Vec3f(1, 3, -0.25));
-		palm.push_back(Vec3f(1, 4, -0.25));
-		palm.push_back(Vec3f(1, 5.5, -0.1));
-		palm.push_back(Vec3f(1.5, 3, -0.25));
-		palm.push_back(Vec3f(1.5, 3, -0.1));
-		palm.push_back(Vec3f(1.5, 4, -0.1));
-		palm.push_back(Vec3f(2, 5, -0.25));
-		palm.push_back(Vec3f(2, 3.5, -0.25));
-		palm.push_back(Vec3f(2, 4, 0));
+		palm.push_back(Vec3f(reflect * 0.5, 1.5, -0.25));
+		palm.push_back(Vec3f(reflect * 0.5, 2, -0.45));
+		palm.push_back(Vec3f(reflect * 0.5, 3, -0.65));
+		palm.push_back(Vec3f(reflect * 0.5, 4, -0.45));
+		palm.push_back(Vec3f(reflect * 0.5, 5, -0.25));
+		palm.push_back(Vec3f(reflect * 1, 1.5, -0.25));
+		palm.push_back(Vec3f(reflect * 1, 2, -0.25));
+		palm.push_back(Vec3f(reflect * 1, 3, -0.25));
+		palm.push_back(Vec3f(reflect * 1, 4, -0.25));
+		palm.push_back(Vec3f(reflect * 1, 5.5, -0.1));
+		palm.push_back(Vec3f(reflect * 1.5, 3, -0.25));
+		palm.push_back(Vec3f(reflect * 1.5, 3, -0.1));
+		palm.push_back(Vec3f(reflect * 1.5, 4, -0.1));
+		palm.push_back(Vec3f(reflect * 2, 5, -0.25));
+		palm.push_back(Vec3f(reflect * 2, 3.5, -0.25));
+		palm.push_back(Vec3f(reflect * 2, 4, 0));
 
 		// Also move children
 		for (int i = 0; i < thumbRoot.size(); ++i)	palm.push_back(thumbRoot.at(i));
@@ -663,6 +669,7 @@ int main()
 	controls[LITTLE_ROOT_XROTATE] = ModelerControl("Little Finger Root X Rotation", -90, 90, 1, 0);
 	controls[LITTLE_ROOT_YROTATE] = ModelerControl("Little Finger Root Y Rotation", -90, 90, 1, 0);
 	controls[LITTLE_ROOT_ZROTATE] = ModelerControl("Little Finger Root Z Rotation", -90, 90, 1, 0);
+	controls[INSTANCE_RIGHT_HAND] = ModelerControl("Individual Looking Variant - Right Hand", 0, 1, 1, 0);
 
 	ModelerApplication::Instance()->Init(&createHandModel, controls, NUMCONTROLS);
 	return ModelerApplication::Instance()->Run();
