@@ -532,13 +532,36 @@ void HandModel::draw()
 	updateMarchingCubesMap();
 
 	// Draw metaballs
-	setAmbientColor(.1f, .1f, .1f);
-	setDiffuseColor(1, 0.6, 0);
+	
 	glPushMatrix();
+	
+	
 	glTranslated(VAL(XPOS), VAL(YPOS), VAL(ZPOS));
 	glRotated(VAL(XROTATE), 1, 0, 0);
 	glRotated(VAL(YROTATE), 0, 1, 0);
 	glRotated(VAL(ZROTATE), 0, 0, 1);
+
+	// Draw spheres representing the light sources
+	if (VAL(LIGHT0_MARKER)) {
+		glPushMatrix();
+			glTranslated(light0Pos[0], light0Pos[1], light0Pos[2]);
+			setAmbientColor(1, 1, 1);
+			setDiffuseColor(1, 1, 1);
+			drawSphere(0.25);
+		glPopMatrix();
+	}
+
+	if (VAL(LIGHT1_MARKER)) {
+		glPushMatrix();
+			glTranslated(light1Pos[0], light1Pos[1], light1Pos[2]);
+			setAmbientColor(1, 1, 1);
+			setDiffuseColor(1, 1, 1);
+			drawSphere(0.25);
+		glPopMatrix();
+	}
+
+	setAmbientColor(.2f, .2f, .2f);
+	setDiffuseColor(1, 0.6, 0);
 	for (int i = 0; i < gridNum; ++i) {
 		for (int j = 0; j < gridNum * 3 / 5; ++j) {
 			for (int k = gridNum * 2 / 5; k < gridNum; ++k) {
@@ -595,6 +618,14 @@ void HandModel::draw()
 					}
 
 					if (validTriangle) {
+						// Phong shading model - calculates the attenuation for diffuse and specular term
+						double lx = light0Pos[0] - x; double ly = light0Pos[1] - y; double lz = light0Pos[2] - z;
+						double atten = (VAL(LIGHT0_INTENSITY) / 7.5) / (lx * lx + ly * ly + lz * lz);
+						lx = light1Pos[0] - x; ly = light1Pos[1] - y; lz = light1Pos[2] - z;
+						atten += (VAL(LIGHT1_INTENSITY) / 7.5) / (lx * lx + ly * ly + lz * lz);
+						if (atten > 1) atten = 1;
+						setDiffuseColor(atten * 1, atten * 0.6, atten * 0);
+						// setSpecularColor(atten * 1, atten * 0.6, atten * 0);	// Looks a bit weird with highlights tbh
 						drawTriangle(vertices[0][0], vertices[0][1], vertices[0][2],
 							vertices[1][0], vertices[1][1], vertices[1][2],
 							vertices[2][0], vertices[2][1], vertices[2][2]);
@@ -615,12 +646,17 @@ int main()
 	// Constructor is ModelerControl(name, minimumvalue, maximumvalue, 
 	// stepsize, defaultvalue)
 	ModelerControl controls[NUMCONTROLS];
+	controls[INSTANCE_RIGHT_HAND] = ModelerControl("Individual Looking Variant - Right Hand", 0, 1, 1, 0);
+	controls[LIGHT0_INTENSITY] = ModelerControl("Light 0 Intensity", 0, 100, 1, 10);
 	controls[LIGHT0_XPOS] = ModelerControl("Light 0 X Position", -20, 20, 0.1f, 4);
 	controls[LIGHT0_YPOS] = ModelerControl("Light 0 Y Position", -20, 20, 0.1f, 2);
 	controls[LIGHT0_ZPOS] = ModelerControl("Light 0 Z Position", -20, 20, 0.1f, -4);
+	controls[LIGHT0_MARKER] = ModelerControl("Light 0 Marker On/off", 0, 1, 1, 0);
+	controls[LIGHT1_INTENSITY] = ModelerControl("Light 1 Intensity", 0, 100, 1, 80);
 	controls[LIGHT1_XPOS] = ModelerControl("Light 1 X Position", -20, 20, 0.1f, -2);
 	controls[LIGHT1_YPOS] = ModelerControl("Light 1 Y Position", -20, 20, 0.1f, 1);
 	controls[LIGHT1_ZPOS] = ModelerControl("Light 1 Z Position", -20, 20, 0.1f, 5);
+	controls[LIGHT1_MARKER] = ModelerControl("Light 1 Marker On/off", 0, 1, 1, 0);
 	controls[XPOS] = ModelerControl("Hand X Position", -5, 5, 0.1f, 0);
 	controls[YPOS] = ModelerControl("Hand Y Position", 0, 5, 0.1f, 0);
 	controls[ZPOS] = ModelerControl("Hand Z Position", -5, 5, 0.1f, 0);
@@ -669,7 +705,6 @@ int main()
 	controls[LITTLE_ROOT_XROTATE] = ModelerControl("Little Finger Root X Rotation", -90, 90, 1, 0);
 	controls[LITTLE_ROOT_YROTATE] = ModelerControl("Little Finger Root Y Rotation", -90, 90, 1, 0);
 	controls[LITTLE_ROOT_ZROTATE] = ModelerControl("Little Finger Root Z Rotation", -90, 90, 1, 0);
-	controls[INSTANCE_RIGHT_HAND] = ModelerControl("Individual Looking Variant - Right Hand", 0, 1, 1, 0);
 
 	ModelerApplication::Instance()->Init(&createHandModel, controls, NUMCONTROLS);
 	return ModelerApplication::Instance()->Run();
