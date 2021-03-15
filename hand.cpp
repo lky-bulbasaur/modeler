@@ -11,6 +11,7 @@
 #include "mat.h"
 #include "marchingcubesconst.h"
 #include "modelerglobals.h"
+#include "bitmap.h"
 
 #include <iostream>
 
@@ -24,6 +25,8 @@ public:
 		marchingCubesMap = NULL;
 		MARCHING_CUBES_THRESHOLD = 17;
 		FLOOR_SIZE = 20.0;
+		texture = readBMP("./donutTexture.bmp", textureWidth, textureHeight);
+		glGenTextures(1, &textureID);
 	}
 
 	~HandModel() {
@@ -87,6 +90,10 @@ private:
 	float index_tipXmidXrootX_delta = 3.5;
 	float rest_tipXmidXrootX_angle = 0;			//max9
 	float rest_tipXmidXrootX_delta = 0.5;
+
+	GLubyte* texture;
+	int textureWidth, textureHeight;
+	GLuint textureID;
 };
 
 // We need to make a creator function, mostly because of
@@ -636,6 +643,10 @@ void HandModel::draw()
 	}
 	glPopMatrix();
 
+	glPushMatrix();
+		glTranslated(5.0, -0.15, -0.15);
+		drawDonutTorus(0.15, 0.25, textureID, texture, textureWidth, textureHeight);
+	glPopMatrix();
 }
 
 // Comment all other main() and uncomment this if you want the modeler to load this

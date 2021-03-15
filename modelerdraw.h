@@ -94,4 +94,10 @@ void drawTriangle( double x1, double y1, double z1,
 			       double x2, double y2, double z2,
 			       double x3, double y3, double z3 );
 
+void drawDonutTorus(double width, double r, GLuint textureID, GLubyte* texture, int textureWidth, int textureHeight);
+
+void drawTorus(double width, double r);
+
+void drawDonut(double width, double r);
+
 #endif
