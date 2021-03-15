@@ -419,7 +419,9 @@ void drawTriangle( double x1, double y1, double z1,
     }
 }
 
-void drawTorus(double width, double r) {
+// draw a torus with donut texture
+// reference: https://www.opengl.org/archives/resources/code/samples/redbook/torus.c
+void drawDonutTorus(double width, double r, GLuint textureID, GLubyte* texture, int textureWidth, int textureHeight) {
     ModelerDrawState* mds = ModelerDrawState::Instance();
     int divisions;
 
@@ -447,45 +449,113 @@ void drawTorus(double width, double r) {
     }
     else
     {
-        double numOfSegments = divisions * 10;
-        for (int i = 0; i < numOfSegments; i++) {
-            GLdouble angle = M_PI * 2.0 / numOfSegments * i;
-            GLdouble x, z;
-            x = width * cos(angle);
-            z = width * sin(angle);
-            glPushMatrix();
-            glTranslated(-x, 0.0, z);
-            glRotated(angle / M_PI * 180.0, 0.0, 1.0, 0.0);
-            drawCylinder(M_PI * 2.0 / numOfSegments * width * 5, r, r);
-            glPopMatrix();
+        glBindTexture(GL_TEXTURE_2D, textureID);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+        glEnable(GL_TEXTURE_2D);
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+        int radialSeg = divisions * 5;
+        int numOfSides = divisions * 5 * 2;
+        const double M_2PI = M_PI * 2;
+
+        for (int i = 0; i < radialSeg; i++) {
+            glBegin(GL_QUAD_STRIP);
+            for (int j = 0; j <= numOfSides; j++) {
+                for (int k = 0; k <= 1; k++) {
+                    double s = (i + k) % radialSeg + 0.5;
+                    double t = j % (numOfSides + 1);
+
+                    double x = (r + width * cos(s * M_2PI / radialSeg)) * cos(t * M_2PI / numOfSides);
+                    double y = (r + width * cos(s * M_2PI / radialSeg)) * sin(t * M_2PI / numOfSides);
+                    double z = width * sin(s * M_2PI / radialSeg);
+
+                    double u = (i + k) / (double)radialSeg;
+                    double v = t / (double)numOfSides;
+
+                    glTexCoord2d(u, v);
+                    glNormal3f(2 * x, 2 * y, 2 * z);
+                    glVertex3d(2 * x, 2 * y, 2 * z);
+                }
+            }
+            glEnd();
         }
+
+        glDisable(GL_TEXTURE_2D);
     }
 }
 
-void drawDonut(double width, double r) {
-    int textureWidth, textureHeight;
-    GLubyte* data = readBMP("./donutTexture.bmp", textureWidth, textureHeight);
-    if (!data)
-        std::cout << "hi" << std::endl;
-
-    // Create one OpenGL texture
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-
-    // "Bind" the newly created texture : all future texture functions will modify this texture
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    // Give the image to OpenGL
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    glEnable(GL_TEXTURE_2D);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-
-    drawTorus(width, r);
-
-    glDisable(GL_TEXTURE_2D);
-}
+//void drawTorus(double width, double r) {
+//    ModelerDrawState* mds = ModelerDrawState::Instance();
+//    int divisions;
+//
+//    _setupOpenGl();
+//
+//    switch (mds->m_quality)
+//    {
+//    case HIGH:
+//        divisions = 32; break;
+//    case MEDIUM:
+//        divisions = 20; break;
+//    case LOW:
+//        divisions = 12; break;
+//    case POOR:
+//        divisions = 8; break;
+//    }
+//
+//    if (mds->m_rayFile)
+//    {
+//        _dump_current_modelview();
+//        fprintf(mds->m_rayFile,
+//            "torus { outer_width=%f; inner_radius=%f;\n", width, r);
+//        _dump_current_material();
+//        fprintf(mds->m_rayFile, "})\n");
+//    }
+//    else
+//    {
+//        double numOfSegments = divisions * 10;
+//        for (int i = 0; i < numOfSegments; i++) {
+//            GLdouble angle = M_PI * 2.0 / numOfSegments * i;
+//            GLdouble x, z;
+//            x = width * cos(angle);
+//            z = width * sin(angle);
+//            glPushMatrix();
+//            glTranslated(-x, 0.0, z);
+//            glRotated(angle / M_PI * 180.0, 0.0, 1.0, 0.0);
+//            drawCylinder(M_PI * 2.0 / numOfSegments * width * 5, r, r);
+//            glPopMatrix();
+//        }
+//    }
+//}
+//
+//void drawDonut(double width, double r) {
+//    int textureWidth, textureHeight;
+//    GLubyte* data = readBMP("./donutTexture_1.bmp", textureWidth, textureHeight);
+//    if (!data)
+//        std::cout << "hi" << std::endl;
+//
+//    GLuint textureID;
+//    glGenTextures(1, &textureID);
+//
+//    glBindTexture(GL_TEXTURE_2D, textureID);
+//
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, textureWidth, textureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+//
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+//    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+//
+//    glEnable(GL_TEXTURE_2D);
+//
+//    setDiffuseColor(0.175, 0.010, 0.030);
+//    drawTorus(width, r);
+//    drawCylinder(width, r,r);
+//
+//    glDisable(GL_TEXTURE_2D);
+//}
