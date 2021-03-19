@@ -4,8 +4,8 @@ HKUST login(s): kylawah, ptwongaa
 
 Basic requirements: 
 Please state what 2B you implemented to exclude from your B/W scores below
-B ______
-B ______
+B texture
+B polygonal faces (triangles)
 
 B/W:
 
