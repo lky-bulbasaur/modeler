@@ -15,13 +15,13 @@ Delete yes/no when appropriate
 W dramatic light					yes
 W adjustable LoD					yes
 W your idea 						yes (phlog shading)
-B texture map						yes/no
+B texture map						yes
 B polygonal faces (triangles)				yes
-B animation       					yes/no
+B animation       					yes
 B individual looking (not just red/green) 		yes
 B frame all						yes
-BW up vector 						yes/no
-2B new primitives for each 				yes/no
+BW up vector 						yes
+2B new primitives for each 				yes (torus)
 2B L-system						yes/no
 2B mood cycling 					yes/no
 4B metaballs						yes
