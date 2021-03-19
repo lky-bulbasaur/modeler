@@ -20,10 +20,12 @@ B polygonal faces (triangles)				yes
 B animation       					yes
 B individual looking (not just red/green) 		yes
 B frame all						yes
-BW up vector 						yes
+BW up vector 						yes (ctrl+leftclick)
 2B new primitives for each 				yes (torus)
 2B L-system						no
 2B mood cycling 					no
 4B metaballs						yes
 8B goal-oriented motion 				no
 +4B joint contraints 					no
+
+Please set vs studio to release configuration when building the project. Sometimes using debug config will make gpu not work on this project.
