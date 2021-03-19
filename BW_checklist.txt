@@ -1,0 +1,29 @@
+Modeler Bells and Whistles checklist for grading
+
+HKUST login(s): kylawah, ptwongaa
+
+Basic requirements: 
+Please state what 2B you implemented to exclude from your B/W scores below
+B ______
+B ______
+
+B/W:
+
+Delete yes/no when appropriate
+
+
+W dramatic light					yes
+W adjustable LoD					yes
+W your idea 						yes (phlog shading)
+B texture map						yes/no
+B polygonal faces (triangles)				yes
+B animation       					yes/no
+B individual looking (not just red/green) 		yes
+B frame all						yes
+BW up vector 						yes/no
+2B new primitives for each 				yes/no
+2B L-system						yes/no
+2B mood cycling 					yes/no
+4B metaballs						yes
+8B goal-oriented motion 				no
++4B joint contraints 					no
